@@ -33,8 +33,10 @@
     100% { opacity: 1; }
   }
 
+  /* レスポンシブ対応のための調整 */
   #config-bar {
-    width: 800px;
+    width: 100%;
+    max-width: 800px;
     background: var(--retro-bg);
     border: 2px solid var(--retro-text);
     padding: 8px;
@@ -46,18 +48,21 @@
     gap: 15px;
     font-size: 14px;
     color: var(--retro-text);
+    flex-wrap: wrap;
   }
 
   #game-container {
-    width: 800px;
+    width: 100%;
+    max-width: 800px;
     height: 600px;
+    max-height: 90vh;
     background-color: var(--retro-bg);
     border: 4px double var(--retro-text);
     position: relative;
     display: flex;
     flex-direction: column;
     box-shadow: inset 0 0 50px rgba(0, 255, 0, 0.2), 0 0 15px var(--retro-text);
-    overflow: hidden; /* はみ出した部分は隠す */
+    overflow: hidden;
   }
 
   #scanlines {
@@ -75,7 +80,7 @@
   }
   
   #character-area {
-    flex: 1; /* 残りのスペースを使う */
+    flex: 1;
     background-color: #000;
     background-image: 
       linear-gradient(var(--retro-text) 1px, transparent 1px),
@@ -86,38 +91,26 @@
 
     display: flex;
     justify-content: center;
-    /* 画像を上下中央に配置して安定させる */
     align-items: center; 
     position: relative;
     z-index: 1;
     overflow: hidden;
   }
 
-  /* ■■■ ここが修正ポイントです ■■■ */
   #char-img {
-    /* サイズを自動調整 */
     width: auto;
     height: auto;
-    
-    /* 【重要】画像の高さに上限を設ける */
-    /* これにより、下のUIを押し出すことがなくなります */
     max-width: 90%;
-    max-height: 65%; 
-    
+    max-height: 80%; 
     object-fit: contain;
-    
-    /* 緑色のフィルタを削除しました */
-    filter: grayscale(100%) sepia(100%) hue-rotate(70deg) brightness(1.2) contrast(1.2); 
-    
-    image-rendering: pixelated;
-    filter: drop-shadow(0 0 10px rgba(0,0,0,0.3));
+    /* ドット絵風の表示設定 */
+    image-rendering: pixelated; 
+    filter: drop-shadow(0 0 10px rgba(80, 255, 80, 0.5));
   }
-  /* ■■■ 修正ポイントここまで ■■■ */
   
   #message-window {
-    /* 高さを少し控えめに調整 */
     height: 160px;
-    flex-shrink: 0; /* 縮まないようにする */
+    flex-shrink: 0;
     background-color: var(--retro-win-bg);
     border: 4px outset var(--retro-border);
     margin: 10px;
@@ -135,7 +128,7 @@
   #message-window::-webkit-scrollbar-thumb { background: var(--retro-border); border: 2px outset #fff; }
   
   #input-area {
-    flex-shrink: 0; /* 縮まないようにする */
+    flex-shrink: 0;
     background-color: var(--retro-bg);
     padding: 15px;
     display: flex;
@@ -156,7 +149,7 @@
   
   input[type="password"] {
     padding: 4px;
-    width: 250px;
+    width: 150px;
     background: #000;
     border: 2px inset var(--retro-text);
     color: var(--retro-text);
@@ -176,6 +169,21 @@
   button:hover { background: #006000; }
   button:active { border-style: inset; }
 
+  /* レスポンシブ調整: モバイル向け */
+  @media (max-width: 600px) {
+    #config-bar {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    #message-window {
+      font-size: 16px;
+      height: 140px;
+    }
+    button {
+      padding: 10px 15px;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -189,7 +197,8 @@
     <div id="scanlines"></div>
 
     <div id="character-area">
-      <img id="char-img" src="normal.png" alt="[Snowy.png]">
+      <!-- 初期画像はスクリプトで設定されます -->
+      <img id="char-img" src="" alt="[Snowy]">
     </div>
 
     <div id="message-window">
@@ -204,7 +213,7 @@
   </div>
 
 <script>
-  // プロンプトは変更なし
+  // プロンプト設定
   const SYSTEM_PROMPT = `
 # Role
 あなたは「Snowy（スノーウィ）」という名前の、ユーザーと同年代の女子高生です。
@@ -233,6 +242,8 @@
    - [怒り] (「もう、ダメですよ〜」といった軽いツッコミや、心配する時)
 `;
 
+  // 元の画像ファイル設定に戻しました。
+  // ローカル環境やサーバー上に以下の画像ファイルを配置してください。
   const IMAGES = { 
     '[普通]': 'normal.png', 
     '[笑顔]': 'smile.png', 
@@ -244,6 +255,9 @@
   const charImg = document.getElementById('char-img');
   
   window.onload = function() {
+    // 初期画像
+    charImg.src = IMAGES['[普通]'];
+
     const savedKey = localStorage.getItem("gemini_api_key");
     if (savedKey) {
       document.getElementById('api-key').value = savedKey;
@@ -252,21 +266,24 @@
 
   async function sendMessage() {
     const apiKeyInput = document.getElementById('api-key');
-    const apiKey = apiKeyInput.value;
+    const apiKey = apiKeyInput.value.trim();
     const userInput = document.getElementById('user-input');
     const text = userInput.value;
 
-    if (!apiKey) { alert("API KEY ERROR."); return; }
+    if (!apiKey) { alert("API KEY ERROR. (APIキーを入力してください)"); return; }
     if (!text) return;
 
     localStorage.setItem("gemini_api_key", apiKey);
 
-    messageWindow.innerHTML = `<span style="color:#50ff50;">> あなた:</span> ${text}<br><br>`;
+    messageWindow.innerHTML += `<span style="color:#50ff50;">> あなた:</span> ${text}<br><br>`;
     userInput.value = '';
+    messageWindow.scrollTop = messageWindow.scrollHeight;
+
     chatHistory.push({ role: "user", parts: [{ text: text }] });
 
     try {
-      const modelName = "gemini-2.5-flash";
+      // プレビュー環境で動作する最新モデルを使用
+      const modelName = "gemini-2.5-flash-preview-09-2025";
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
       const response = await fetch(url, {
@@ -282,7 +299,11 @@
       
       if (data.error) {
         console.error("API Error Details:", data);
-        throw new Error(data.error.message);
+        throw new Error(data.error.message || "Unknown API Error");
+      }
+
+      if (!data.candidates || data.candidates.length === 0) {
+          throw new Error("No response candidates returned.");
       }
 
       const content = data.candidates[0].content.parts[0].text;
@@ -291,33 +312,58 @@
       let emotion = '[普通]';
       let cleanText = content;
       
+      // 感情タグの解析
       const match = content.match(/^\s*(\[.*?\])\s*(.*)/s);
       if (match) {
         emotion = match[1];
         cleanText = match[2];
       }
 
-      if (IMAGES[emotion]) { charImg.src = IMAGES[emotion]; }
+      if (IMAGES[emotion]) { 
+        charImg.src = IMAGES[emotion]; 
+      } else {
+        // 未知の感情タグの場合は普通に戻す
+        charImg.src = IMAGES['[普通]'];
+      }
       
       typeWriterEffect(cleanText, 55); 
 
     } catch (error) {
-      messageWindow.innerText = "SYSTEM ERROR: " + error;
+      console.error(error);
+      messageWindow.innerHTML += `<div style="color: red; margin-top: 10px;">SYSTEM ERROR: ${error.message}</div>`;
+      messageWindow.scrollTop = messageWindow.scrollHeight;
     }
   }
 
+  // 簡易タイプライター表示制御
+  let isTyping = false;
+  
   function typeWriterEffect(text, speed) {
+    if (isTyping) return; // 重複実行防止（簡易的）
+    isTyping = true;
+
     let i = 0;
     const nameSpan = `<span style="color:#fff; font-weight:bold;">[Snowy]</span><br>`;
-    messageWindow.innerHTML += nameSpan;
-    
+    // 追記モードにするため、既存のHTMLは消さない
+    const messageContainer = document.createElement('div');
+    messageContainer.innerHTML = nameSpan;
+    messageWindow.appendChild(messageContainer);
+
     function type() {
       if (i < text.length) {
-        messageWindow.innerHTML += text.charAt(i);
+        // 改行コードの処理
+        if (text.charAt(i) === '\n') {
+            messageContainer.innerHTML += '<br>';
+        } else {
+            messageContainer.innerHTML += text.charAt(i);
+        }
         i++;
+        messageWindow.scrollTop = messageWindow.scrollHeight;
         setTimeout(type, speed);
       } else {
+        messageContainer.innerHTML += "<br><br>"; // 完了後の余白
         messageWindow.scrollTop = messageWindow.scrollHeight;
+        isTyping = false;
       }
     }
     type();
