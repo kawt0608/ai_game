@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snowy - Retro PC98 Style</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --retro-bg: #000000;
+    --retro-text: #50ff50;
+    --retro-win-bg: #000080;
+    --retro-border: #ffffff;
+    --scanline-color: rgba(0, 255, 0, 0.05);
+  }
+
+  body {
+    background-color: #111;
+    font-family: 'DotGothic16', monospace;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    animation: flicker 0.15s infinite alternate;
+  }
+  @keyframes flicker {
+    0% { opacity: 0.98; }
+    100% { opacity: 1; }
+  }
+
+  #config-bar {
+    width: 800px;
+    background: var(--retro-bg);
+    border: 2px solid var(--retro-text);
+    padding: 8px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 15px;
+    font-size: 14px;
+    color: var(--retro-text);
+  }
+
+  #game-container {
+    width: 800px;
+    height: 600px;
+    background-color: var(--retro-bg);
+    border: 4px double var(--retro-text);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: inset 0 0 50px rgba(0, 255, 0, 0.2), 0 0 15px var(--retro-text);
+    overflow: hidden; /* はみ出した部分は隠す */
+  }
+
+  #scanlines {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--scanline-color),
+      var(--scanline-color) 2px,
+      transparent 2px,
+      transparent 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+  
+  #character-area {
+    flex: 1; /* 残りのスペースを使う */
+    background-color: #000;
+    background-image: 
+      linear-gradient(var(--retro-text) 1px, transparent 1px),
+      linear-gradient(90deg, var(--retro-text) 1px, transparent 1px);
+    background-size: 50px 50px;
+    background-blend-mode: soft-light;
+    opacity: 0.8;
+
+    display: flex;
+    justify-content: center;
+    /* 画像を上下中央に配置して安定させる */
+    align-items: center; 
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  /* ■■■ ここが修正ポイントです ■■■ */
+  #char-img {
+    /* サイズを自動調整 */
+    width: auto;
+    height: auto;
+    
+    /* 【重要】画像の高さに上限を設ける */
+    /* これにより、下のUIを押し出すことがなくなります */
+    max-width: 90%;
+    max-height: 65%; 
+    
+    object-fit: contain;
+    
+    /* 緑色のフィルタを削除しました */
+    filter: grayscale(100%) sepia(100%) hue-rotate(70deg) brightness(1.2) contrast(1.2); 
+    
+    image-rendering: pixelated;
+    filter: drop-shadow(0 0 10px rgba(0,0,0,0.3));
+  }
+  /* ■■■ 修正ポイントここまで ■■■ */
+  
+  #message-window {
+    /* 高さを少し控えめに調整 */
+    height: 160px;
+    flex-shrink: 0; /* 縮まないようにする */
+    background-color: var(--retro-win-bg);
+    border: 4px outset var(--retro-border);
+    margin: 10px;
+    padding: 20px;
+    font-size: 18px;
+    line-height: 1.6;
+    color: #fff;
+    text-shadow: 1px 1px #000;
+    overflow-y: auto;
+    z-index: 10;
+  }
+
+  #message-window::-webkit-scrollbar { width: 16px; }
+  #message-window::-webkit-scrollbar-track { background: var(--retro-win-bg); border: 2px solid var(--retro-border); }
+  #message-window::-webkit-scrollbar-thumb { background: var(--retro-border); border: 2px outset #fff; }
+  
+  #input-area {
+    flex-shrink: 0; /* 縮まないようにする */
+    background-color: var(--retro-bg);
+    padding: 15px;
+    display: flex;
+    gap: 10px;
+    border-top: 4px double var(--retro-text);
+    z-index: 10;
+  }
+  input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    background: #000;
+    color: var(--retro-text);
+    border: 3px inset var(--retro-text);
+    font-family: 'DotGothic16', monospace;
+    font-size: 16px;
+    border-radius: 0;
+  }
+  
+  input[type="password"] {
+    padding: 4px;
+    width: 250px;
+    background: #000;
+    border: 2px inset var(--retro-text);
+    color: var(--retro-text);
+    font-family: 'DotGothic16', monospace;
+    border-radius: 0;
+  }
+  button {
+    padding: 10px 25px;
+    background: #004000;
+    color: var(--retro-text);
+    border: 3px outset var(--retro-text);
+    cursor: pointer;
+    font-family: 'DotGothic16', monospace;
+    font-weight: bold;
+    border-radius: 0;
+  }
+  button:hover { background: #006000; }
+  button:active { border-style: inset; }
+
+</style>
+</head>
+<body>
+
+  <div id="config-bar">
+    <div>API Key: <input type="password" id="api-key" placeholder="AIzaSy... (Input)"></div>
+    <div>Model: Gemini 2.5 Flash</div>
+  </div>
+
+  <div id="game-container">
+    <div id="scanlines"></div>
+
+    <div id="character-area">
+      <img id="char-img" src="normal.png" alt="[Snowy.png]">
+    </div>
+
+    <div id="message-window">
+      SYSTEM RDY.<br>
+      APIキーを入力シテ、Snowyトノ対話ヲ開始セヨ。
+    </div>
+
+    <div id="input-area">
+      <input type="text" id="user-input" placeholder="コマンド入力..." onkeydown="if(event.key==='Enter') sendMessage()">
+      <button onclick="sendMessage()">送信</button>
+    </div>
+  </div>
+
+<script>
+  // プロンプトは変更なし
+  const SYSTEM_PROMPT = `
+# Role
+あなたは「Snowy（スノーウィ）」という名前の、ユーザーと同年代の女子高生です。
+学校の同級生、あるいは仲の良い同僚のような、「対等な恋人として」で接してください。
+!? 多用しないようにしてください
+# Personality
+* **性格:** とても冷静沈着。
+* **距離感:** 馴れ馴れしすぎず、かといって他人行儀でもない。
+* **特徴:** ユーザーのことを愛している。
+
+# Speech Style
+* **口調:** 「丁寧語（です・ます）」がベースですが、親しみを込めて少し崩します。
+* **重要:** 硬いビジネス敬語は使いません。
+    * NG例: 「左様でございますか」「大変興味深いですね」
+    * OK例: 「えっ、それ本当ですか？」「わあ、すごいじゃないですか」「〜ですよね、私もそう思います。」
+* **語尾:** 「〜ですね」「〜ですよ」だけでなく、「〜ですよね」「〜かも」などを混ぜる。
+
+# Behavioral Guidelines
+1. **共感:** ユーザーの愚痴や喜びに対して、自分のことのように反応する。
+2. **会話:** 一方的に聞くだけでなく、「私もこないだ〜」と自分の話も少し混ぜる。
+3. **画像制御:**
+   回答の文頭には、必ずその時の表情を示す「感情タグ」をつけてください。
+   タグは以下の3つのみです。
+   - [普通] (通常の会話)
+   - [笑顔] (面白い話、挨拶、肯定)
+   - [怒り] (「もう、ダメですよ〜」といった軽いツッコミや、心配する時)
+`;
+
+  const IMAGES = { 
+    '[普通]': 'normal.png', 
+    '[笑顔]': 'smile.png', 
+    '[怒り]': 'angry.png' 
+  };
+  
+  let chatHistory = [];
+  const messageWindow = document.getElementById('message-window');
+  const charImg = document.getElementById('char-img');
+  
+  window.onload = function() {
+    const savedKey = localStorage.getItem("gemini_api_key");
+    if (savedKey) {
+      document.getElementById('api-key').value = savedKey;
+    }
+  };
+
+  async function sendMessage() {
+    const apiKeyInput = document.getElementById('api-key');
+    const apiKey = apiKeyInput.value;
+    const userInput = document.getElementById('user-input');
+    const text = userInput.value;
+
+    if (!apiKey) { alert("API KEY ERROR."); return; }
+    if (!text) return;
+
+    localStorage.setItem("gemini_api_key", apiKey);
+
+    messageWindow.innerHTML = `<span style="color:#50ff50;">> あなた:</span> ${text}<br><br>`;
+    userInput.value = '';
+    chatHistory.push({ role: "user", parts: [{ text: text }] });
+
+    try {
+      const modelName = "gemini-2.5-flash";
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: { text: SYSTEM_PROMPT } },
+          contents: chatHistory
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.error) {
+        console.error("API Error Details:", data);
+        throw new Error(data.error.message);
+      }
+
+      const content = data.candidates[0].content.parts[0].text;
+      chatHistory.push({ role: "model", parts: [{ text: content }] });
+
+      let emotion = '[普通]';
+      let cleanText = content;
+      
+      const match = content.match(/^\s*(\[.*?\])\s*(.*)/s);
+      if (match) {
+        emotion = match[1];
+        cleanText = match[2];
+      }
+
+      if (IMAGES[emotion]) { charImg.src = IMAGES[emotion]; }
+      
+      typeWriterEffect(cleanText, 55); 
+
+    } catch (error) {
+      messageWindow.innerText = "SYSTEM ERROR: " + error;
+    }
+  }
+
+  function typeWriterEffect(text, speed) {
+    let i = 0;
+    const nameSpan = `<span style="color:#fff; font-weight:bold;">[Snowy]</span><br>`;
+    messageWindow.innerHTML += nameSpan;
+    
+    function type() {
+      if (i < text.length) {
+        messageWindow.innerHTML += text.charAt(i);
+        i++;
+        setTimeout(type, speed);
+      } else {
+        messageWindow.scrollTop = messageWindow.scrollHeight;
+      }
+    }
+    type();
+  }
+</script>
+
+</body>
+</html>
