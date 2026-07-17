@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>温度・湿度測定</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: linear-gradient(145deg, #e0f2fe, #f0fdf4); color: #0f172a; }
+    main { width: min(620px, calc(100% - 32px)); padding: 32px; border-radius: 20px; background: rgba(255,255,255,.9); box-shadow: 0 20px 50px rgba(15,23,42,.12); }
+    h1 { margin-top: 0; }
+    .note { color: #64748b; }
+    form { margin: 26px 0; }
+    button { width: 100%; padding: 14px; border: 0; border-radius: 10px; background: #0284c7; color: white; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    button:hover { background: #0369a1; }
+    .result { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .result div { padding: 18px; border-radius: 12px; background: #f8fafc; border: 1px solid #e2e8f0; }
+    .result .time { grid-column: 1 / -1; }
+    dt { color: #64748b; font-size: .85rem; }
+    dd { margin: 8px 0 0; font-size: 1.5rem; font-weight: 800; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>温度・湿度測定</h1>
+    <p class="note">{{ "HDC1080センサーに接続中" if using_sensor else "PC確認モード（サンプル値）" }}</p>
+    <form action="{{ url_for('measure') }}" method="post">
+      <button type="submit">現在の温度・湿度を測定</button>
+    </form>
+    {% if measurement %}
+      <dl class="result" aria-live="polite">
+        <div class="time"><dt>測定時刻</dt><dd>{{ measurement.measured_at }}</dd></div>
+        <div><dt>温度</dt><dd>{{ measurement.temperature }} ℃</dd></div>
+        <div><dt>湿度</dt><dd>{{ measurement.humidity }} %</dd></div>
+      </dl>
+    {% endif %}
+  </main>
+</body>
+</html>
