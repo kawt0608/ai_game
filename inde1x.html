@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LEDコントローラー</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #111827; color: #f8fafc; }
+    main { width: min(720px, calc(100% - 32px)); }
+    h1 { margin-bottom: 8px; }
+    .note { color: #94a3b8; margin-top: 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .card { padding: 24px; border: 1px solid #334155; border-radius: 16px; background: #1e293b; }
+    .status { display: flex; align-items: center; gap: 10px; margin: 18px 0; font-weight: 700; }
+    .lamp { width: 18px; height: 18px; border-radius: 50%; background: #475569; box-shadow: none; }
+    .lamp.on { background: #facc15; box-shadow: 0 0 18px #facc15; }
+    form { display: flex; gap: 10px; }
+    button { flex: 1; padding: 11px; border: 0; border-radius: 9px; font-weight: 700; cursor: pointer; }
+    .on-button { background: #22c55e; color: #052e16; }
+    .off-button { background: #ef4444; color: white; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>LEDコントローラー</h1>
+    <p class="note">{{ "Raspberry Pi GPIOに接続中" if using_gpio else "PC確認モード（GPIOなし）" }}</p>
+    <section class="grid">
+      {% for led_id, led in leds.items() %}
+        <article class="card">
+          <h2>{{ led.name }} <small>GPIO {{ led.pin }}</small></h2>
+          <p class="status"><span class="lamp{% if led.is_on %} on{% endif %}"></span>{{ "ON" if led.is_on else "OFF" }}</p>
+          <form action="{{ url_for('change_led', led_id=led_id) }}" method="post">
+            <button class="on-button" type="submit" name="action" value="on">ON</button>
+            <button class="off-button" type="submit" name="action" value="off">OFF</button>
+          </form>
+        </article>
+      {% endfor %}
+    </section>
+  </main>
+</body>
+</html>
